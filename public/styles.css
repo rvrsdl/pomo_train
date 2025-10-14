@@ -10,6 +10,8 @@ body {
     background: linear-gradient(135deg, #87CEEB 0%, #98FB98 25%, #FFE4B5 50%, #FFB6C1 75%, #DDA0DD 100%);
     background-size: 400% 400%;
     animation: gradientShift 8s ease infinite;
+    -webkit-animation: gradientShift 8s ease infinite;
+    -moz-animation: gradientShift 8s ease infinite;
     min-height: 100vh;
     color: #2c3e50;
     line-height: 1.6;
@@ -17,6 +19,18 @@ body {
 }
 
 @keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@-webkit-keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@-moz-keyframes gradientShift {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
@@ -130,6 +144,7 @@ main {
 .timer-section {
     background: url('pomo_express_disney.png') center center / cover no-repeat,
                 rgba(255, 255, 255, 0.95);
+    background-attachment: scroll;
     border-radius: 30px;
     padding: 2rem;
     text-align: center;
@@ -514,12 +529,31 @@ footer {
     .train-image {
         width: 80px;
     }
+    
+    /* Mobile-specific fixes */
+    body {
+        animation-play-state: running !important;
+        -webkit-animation-play-state: running !important;
+        background-attachment: scroll;
+    }
+    
+    .timer-section {
+        background: url('pomo_express_disney.png') center center / contain no-repeat,
+                    rgba(255, 255, 255, 0.95);
+        background-color: #ff6b6b;
+        min-height: 200px;
+    }
 }
 
 /* Dark mode support */
 @media (prefers-color-scheme: dark) {
     body {
         background: linear-gradient(135deg, #2c3e50 0%, #34495e 25%, #7f8c8d 50%, #95a5a6 75%, #bdc3c7 100%);
+        background-size: 400% 400%;
+        animation: gradientShift 8s ease infinite;
+        -webkit-animation: gradientShift 8s ease infinite;
+        -moz-animation: gradientShift 8s ease infinite;
+        background-attachment: scroll;
     }
     
     .timer-section,
