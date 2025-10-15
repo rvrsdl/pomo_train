@@ -316,7 +316,10 @@ main {
 
 /* Settings */
 .settings-section {
-    background: rgba(255, 255, 255, 0.95);
+    /*background: rgba(255, 255, 255, 0.95);*/
+    background: url('chopped_tomatoes.jpg') center center / cover no-repeat,
+                rgba(255, 255, 255, 0.95);
+    background-attachment: scroll;
     border-radius: 30px;
     padding: 2rem;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
@@ -326,12 +329,12 @@ main {
 }
 
 .settings-section h3 {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
     font-weight: 700;
-    color: #2c3e50;
+    color: #4ecdc4;
     margin-bottom: 1.5rem;
     text-align: center;
-    text-shadow: 2px 2px 0px #fff;
+    text-shadow: 2px 2px 0px #2c3e50;
     transform: rotate(1deg);
 }
 
@@ -349,17 +352,17 @@ main {
 }
 
 .setting-item label {
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: 600;
-    color: #34495e;
-    text-shadow: 1px 1px 0px #fff;
+    color: #4ecdc4;
+    text-shadow: 1px 1px 0px #2c3e50;
 }
 
 .setting-item input {
     padding: 0.8rem;
     border: 3px solid #ff6b6b;
     border-radius: 15px;
-    font-size: 1.1rem;
+    font-size: 1.2rem;
     transition: all 0.3s ease;
     font-family: inherit;
     background: rgba(255, 255, 255, 0.9);
@@ -377,7 +380,7 @@ main {
     position: absolute;
     bottom: 1rem;
     right: 1rem;
-    font-size: 0.9rem;
+    font-size: 1rem;
     color: #7f8c8d;
     font-weight: 600;
     text-shadow: 1px 1px 0px #fff;
