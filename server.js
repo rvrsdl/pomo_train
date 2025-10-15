@@ -31,6 +31,8 @@ let timerState = {
 
 let timerInterval = null;
 
+let userCount = 0;
+
 // Helper function to format time as MM:SS
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -80,7 +82,11 @@ function startCountdown() {
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
-  
+  // Broadcast updated user count to all clients
+  //const userCount = io.engine.clientsCount;
+  userCount++;
+  io.emit('user-count-update', userCount);
+
   // Send current state to newly connected client
   socket.emit('timer-update', {
     ...timerState,
@@ -152,6 +158,11 @@ io.on('connection', (socket) => {
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    
+    // Broadcast updated user count to remaining clients
+    //const userCount = io.engine.clientsCount;
+    userCount--;
+    io.emit('user-count-update', userCount);
   });
 });
 

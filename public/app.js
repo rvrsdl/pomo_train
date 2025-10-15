@@ -27,6 +27,9 @@ const trainWhistle = new Audio('choo-choo-train-whistle-sound-effect.mp3');
 trainWhistle.preload = 'auto';
 trainWhistle.volume = 0.7; // Set volume to 70%
 
+// Passenger counter elements
+const userCount = document.getElementById('userCount');
+
 // Connection status management
 socket.on('connect', () => {
     updateConnectionStatus(true);
@@ -66,6 +69,12 @@ socket.on('mode-changed', (data) => {
     showModeChangeNotification(data.mode, data.cycleCount);
 });
 
+// User count updates
+socket.on('user-count-update', (count) => {
+    console.log('User count updated:', count);
+    updateUserCount(count);
+});
+
 function updateTimerDisplay(data) {
     timerDisplay.textContent = data.formattedTime;
     modeText.textContent = data.mode === 'work' ? 'Work' : 'Break';
@@ -96,6 +105,22 @@ function updateTimerDisplay(data) {
 function updateDocumentTitle(time, mode) {
     const modeEmoji = mode === 'work' ? '🚂' : '☕';
     document.title = `${modeEmoji} ${time} - Pomodoro Express`;
+}
+
+// User count management
+function updateUserCount(count) {
+    if (userCount) {
+        userCount.textContent = count;
+        
+        // Add visual feedback when count changes
+        userCount.style.transform = 'scale(1.2)';
+        userCount.style.color = '#4ecdc4';
+        
+        setTimeout(() => {
+            userCount.style.transform = 'scale(1)';
+            userCount.style.color = '';
+        }, 300);
+    }
 }
 
 // Train animation functions
