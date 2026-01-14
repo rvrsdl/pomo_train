@@ -142,42 +142,35 @@ main {
 
 /* Timer section */
 .timer-section {
-    background: url('pomo_express_disney.png') center center / cover no-repeat,
-                rgba(255, 255, 255, 0.95);
-    background-attachment: scroll;
-    border-radius: 30px;
-    padding: 2rem;
-    text-align: center;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
-    border: 4px solid #ff6b6b;
     position: relative;
+    border-radius: 30px;
+    text-align: center;
+    padding: 2rem;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    border: 4px solid #ff6b6b;
+
+    /* overlay layer only */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+
     overflow: hidden;
+}
+
+.timer-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url('pomo_express_disney.png') center / cover no-repeat;
+    z-index: -1;
     transition: background-image 0.5s ease;
 }
 
 /* Pyramid Mode - Egyptian landscape background */
-.timer-section.pyramid-mode {
-    background: url('egypt_landscape.png') center center / cover no-repeat,
-                rgba(255, 255, 255, 0.95);
+.timer-section.pyramid-mode::before {
+    background-image: url('egypt_landscape.png');
 }
 
-.timer-section::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 30px;
-    z-index: 1;
-}
 
-.timer-section > * {
-    position: relative;
-    z-index: 2;
-}
 
 .mode-indicator {
     display: inline-block;
@@ -323,24 +316,32 @@ main {
 
 /* Settings */
 .settings-section {
-    /*background: rgba(255, 255, 255, 0.95);*/
-    background: url('chopped_tomatoes.jpg') center center / cover no-repeat,
-                rgba(255, 255, 255, 0.95);
-    background-attachment: scroll;
+    position: relative;
     border-radius: 30px;
     padding: 2rem;
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    backdrop-filter: blur(10px);
     border: 4px solid #4ecdc4;
-    position: relative;
+
+    /* overlay layer only */
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+
+    overflow: hidden;
+}
+
+.settings-section::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: url('chopped_tomatoes.jpg') center / cover no-repeat;
+    z-index: -1;
     transition: background-image 0.5s ease;
 }
 
-/* Pyramid Mode - Settings section background */
-.settings-section.pyramid-mode {
-    background: url('pyramid_pomo.png') center center / cover no-repeat,
-                rgba(255, 255, 255, 0.95);
+.settings-section.pyramid-mode::before {
+    background-image: url('pyramid_pomo.png');
 }
+
 
 .settings-section h3 {
     font-size: 1.6rem;
@@ -687,7 +688,7 @@ footer {
         background-attachment: scroll;
     }
     
-    .timer-section {
+    /* .timer-section {
         background: url('pomo_express_disney.png') center center / contain no-repeat,
                     rgba(255, 255, 255, 0.95);
         background-color: #ff6b6b;
@@ -702,7 +703,7 @@ footer {
     .settings-section.pyramid-mode {
         background: url('pyramid_pomo.png') center center / contain no-repeat,
                     rgba(255, 255, 255, 0.95);
-    }
+    } */
     
     .passenger-counter {
         font-size: 0.8rem;
