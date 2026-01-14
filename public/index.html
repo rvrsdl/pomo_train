@@ -43,10 +43,33 @@
 
             <div class="settings-section">
                 <h3>Settings</h3>
+                <div class="pyramid-mode-toggle">
+                    <label for="pyramidMode" class="toggle-label">
+                        <input type="checkbox" id="pyramidMode" class="toggle-input">
+                        <span class="toggle-slider"></span>
+                        <span class="toggle-text">Pyramid Mode</span>
+                    </label>
+                    <div class="pyramid-mode-info" id="pyramidModeInfo" style="display: none;">
+                        <div class="pyramid-durations">
+                            <span class="pyramid-duration" data-cycle="0">5</span>
+                            <span class="pyramid-arrow">→</span>
+                            <span class="pyramid-duration" data-cycle="1">10</span>
+                            <span class="pyramid-arrow">→</span>
+                            <span class="pyramid-duration" data-cycle="2">15</span>
+                            <span class="pyramid-arrow">→</span>
+                            <span class="pyramid-duration" data-cycle="3">20</span>
+                            <span class="pyramid-arrow">→</span>
+                            <span class="pyramid-duration" data-cycle="4">25</span>
+                            <span class="pyramid-arrow">→</span>
+                            <span class="pyramid-duration" data-cycle="5">30</span>
+                            <span class="pyramid-unit">min</span>
+                        </div>
+                    </div>
+                </div>
                 <div class="settings-grid">
                     <div class="setting-item">
                         <label for="workDuration">Work Duration (minutes)</label>
-                        <input type="number" id="workDuration" min="1" max="60" value="25">
+                        <input type="number" id="workDuration" min="1" max="60" value="25" disabled>
                     </div>
                     <div class="setting-item">
                         <label for="breakDuration">Break Duration (minutes)</label>

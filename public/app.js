@@ -12,6 +12,9 @@ const resetBtn = document.getElementById('resetBtn');
 const workDurationInput = document.getElementById('workDuration');
 const breakDurationInput = document.getElementById('breakDuration');
 const applySettingsBtn = document.getElementById('applySettingsBtn');
+const pyramidModeToggle = document.getElementById('pyramidMode');
+const timerSection = document.querySelector('.timer-section');
+const settingsSection = document.querySelector('.settings-section');
 const connectionStatus = document.getElementById('connectionStatus');
 const statusIndicator = document.getElementById('statusIndicator');
 const statusText = document.getElementById('statusText');
@@ -94,12 +97,79 @@ function updateTimerDisplay(data) {
         startBtn.textContent = 'Start';
     }
     
+    // Update pyramid mode toggle
+    if (pyramidModeToggle) {
+        pyramidModeToggle.checked = data.pyramidMode || false;
+        updatePyramidModeUI(data.pyramidMode, data.cycleCount || 0);
+    }
+    
     // Update settings inputs to reflect current durations
     workDurationInput.value = Math.floor(data.workDuration / 60);
     breakDurationInput.value = Math.floor(data.breakDuration / 60);
     
     // Update train animation based on progress
     updateTrainProgress(data);
+}
+
+// Update UI based on pyramid mode state
+function updatePyramidModeUI(isPyramidMode, cycleCount = 0) {
+    if (workDurationInput) {
+        workDurationInput.disabled = isPyramidMode;
+        if (isPyramidMode) {
+            workDurationInput.style.opacity = '0.6';
+            workDurationInput.title = 'Work duration is automatically set in Pyramid Mode';
+        } else {
+            workDurationInput.style.opacity = '1';
+            workDurationInput.title = '';
+        }
+    }
+    
+    // Update timer section background
+    if (timerSection) {
+        if (isPyramidMode) {
+            timerSection.classList.add('pyramid-mode');
+        } else {
+            timerSection.classList.remove('pyramid-mode');
+        }
+    }
+    
+    // Update settings section background
+    if (settingsSection) {
+        if (isPyramidMode) {
+            settingsSection.classList.add('pyramid-mode');
+        } else {
+            settingsSection.classList.remove('pyramid-mode');
+        }
+    }
+    
+    // Show/hide pyramid mode info
+    const pyramidModeInfo = document.getElementById('pyramidModeInfo');
+    if (pyramidModeInfo) {
+        pyramidModeInfo.style.display = isPyramidMode ? 'block' : 'none';
+        
+        // Highlight the active duration based on cycle count
+        if (isPyramidMode) {
+            updatePyramidHighlight(cycleCount);
+        }
+    }
+}
+
+// Update pyramid mode duration highlighting
+function updatePyramidHighlight(cycleCount) {
+    // Cap cycle count at 5 (30 minutes is the max)
+    const activeCycle = Math.min(cycleCount, 5);
+    
+    // Remove active class from all durations
+    const durations = document.querySelectorAll('.pyramid-duration');
+    durations.forEach(duration => {
+        duration.classList.remove('active');
+    });
+    
+    // Add active class to current cycle's duration
+    const activeDuration = document.querySelector(`.pyramid-duration[data-cycle="${activeCycle}"]`);
+    if (activeDuration) {
+        activeDuration.classList.add('active');
+    }
 }
 
 function updateDocumentTitle(time, mode) {
@@ -198,6 +268,11 @@ function showModeChangeNotification(mode, cycleCount) {
     // Play train whistle sound effect
     playTrainWhistle();
     
+    // Update pyramid mode highlight if enabled
+    if (pyramidModeToggle && pyramidModeToggle.checked) {
+        updatePyramidHighlight(cycleCount);
+    }
+    
     // Create temporary notification
     const notification = document.createElement('div');
     notification.className = 'notification';
@@ -235,13 +310,34 @@ resetBtn.addEventListener('click', () => {
     socket.emit('reset-timer');
 });
 
+// Pyramid mode toggle handler
+if (pyramidModeToggle) {
+    pyramidModeToggle.addEventListener('change', () => {
+        const isPyramidMode = pyramidModeToggle.checked;
+        const currentCycleCount = parseInt(cycleCount.textContent) || 0;
+        updatePyramidModeUI(isPyramidMode, currentCycleCount);
+        
+        // Automatically apply settings when toggling pyramid mode
+        const breakDuration = parseInt(breakDurationInput.value);
+        const workDuration = parseInt(workDurationInput.value);
+        
+        socket.emit('update-settings', {
+            pyramidMode: isPyramidMode,
+            workDuration: workDuration,
+            breakDuration: breakDuration
+        });
+    });
+}
+
 // Settings management
 applySettingsBtn.addEventListener('click', () => {
     const workDuration = parseInt(workDurationInput.value);
     const breakDuration = parseInt(breakDurationInput.value);
+    const isPyramidMode = pyramidModeToggle ? pyramidModeToggle.checked : false;
     
-    if (workDuration && breakDuration) {
+    if (breakDuration) {
         socket.emit('update-settings', {
+            pyramidMode: isPyramidMode,
             workDuration: workDuration,
             breakDuration: breakDuration
         });

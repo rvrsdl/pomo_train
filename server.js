@@ -26,18 +26,35 @@ let timerState = {
   mode: 'work', // 'work' or 'break'
   workDuration: 1500, // 25 minutes
   breakDuration: 300, // 5 minutes
-  cycleCount: 0
+  cycleCount: 0,
+  pyramidMode: false
 };
 
 let timerInterval = null;
-
-let userCount = 0;
 
 // Helper function to format time as MM:SS
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
   const remainingSeconds = seconds % 60;
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+}
+
+// Helper function to get current user count
+function getUserCount() {
+  return io.engine.clientsCount || 0;
+}
+
+// Helper function to broadcast user count to all clients
+function broadcastUserCount() {
+  const count = getUserCount();
+  io.emit('user-count-update', count);
+}
+
+// Helper function to calculate pyramid mode work duration
+function getPyramidWorkDuration(cycleCount) {
+  // Pyramid mode: 5, 10, 15, 20, 25, 30 (then stays at 30)
+  const workMinutes = Math.min(30, 5 + (cycleCount * 5));
+  return workMinutes * 60;
 }
 
 // Helper function to broadcast timer state to all clients
@@ -66,6 +83,10 @@ function startCountdown() {
         timerState.cycleCount++;
       } else {
         timerState.mode = 'work';
+        // If pyramid mode is enabled, update work duration based on cycle count
+        if (timerState.pyramidMode) {
+          timerState.workDuration = getPyramidWorkDuration(timerState.cycleCount);
+        }
         timerState.timeRemaining = timerState.workDuration;
       }
       
@@ -82,10 +103,9 @@ function startCountdown() {
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
+  
   // Broadcast updated user count to all clients
-  //const userCount = io.engine.clientsCount;
-  userCount++;
-  io.emit('user-count-update', userCount);
+  broadcastUserCount();
 
   // Send current state to newly connected client
   socket.emit('timer-update', {
@@ -120,8 +140,14 @@ io.on('connection', (socket) => {
   socket.on('reset-timer', () => {
     timerState.isRunning = false;
     timerState.mode = 'work'; // Always reset to work mode
-    timerState.timeRemaining = timerState.workDuration;
     timerState.cycleCount = 0;
+    
+    // If pyramid mode is enabled, reset to initial pyramid duration (5 min)
+    if (timerState.pyramidMode) {
+      timerState.workDuration = getPyramidWorkDuration(0);
+    }
+    
+    timerState.timeRemaining = timerState.workDuration;
     
     if (timerInterval) {
       clearInterval(timerInterval);
@@ -134,14 +160,31 @@ io.on('connection', (socket) => {
   
   // Handle settings update event
   socket.on('update-settings', (settings) => {
-    const { workDuration, breakDuration } = settings;
+    const { workDuration, breakDuration, pyramidMode } = settings;
     
-    // Validate durations (minimum 1 minute, maximum 60 minutes)
-    const workMinutes = Math.max(1, Math.min(60, parseInt(workDuration) || 25));
-    const breakMinutes = Math.max(1, Math.min(60, parseInt(breakDuration) || 5));
+    // Update pyramid mode
+    if (pyramidMode !== undefined) {
+      timerState.pyramidMode = pyramidMode;
+      
+      // If enabling pyramid mode, set initial work duration to 5 min
+      if (pyramidMode) {
+        timerState.workDuration = getPyramidWorkDuration(timerState.cycleCount);
+      }
+    }
     
-    timerState.workDuration = workMinutes * 60;
-    timerState.breakDuration = breakMinutes * 60;
+    // Only update durations if pyramid mode is off
+    if (!timerState.pyramidMode) {
+      // Validate durations (minimum 1 minute, maximum 60 minutes)
+      const workMinutes = Math.max(1, Math.min(60, parseInt(workDuration) || 25));
+      const breakMinutes = Math.max(1, Math.min(60, parseInt(breakDuration) || 5));
+      
+      timerState.workDuration = workMinutes * 60;
+      timerState.breakDuration = breakMinutes * 60;
+    } else {
+      // In pyramid mode, only update break duration
+      const breakMinutes = Math.max(1, Math.min(60, parseInt(breakDuration) || 5));
+      timerState.breakDuration = breakMinutes * 60;
+    }
     
     // Update current time remaining based on current mode
     timerState.timeRemaining = timerState.mode === 'work' ? timerState.workDuration : timerState.breakDuration;
@@ -152,7 +195,7 @@ io.on('connection', (socket) => {
     }
     
     broadcastTimerState();
-    console.log('Settings updated by:', socket.id, 'Work:', workMinutes, 'Break:', breakMinutes);
+    console.log('Settings updated by:', socket.id, 'Pyramid Mode:', timerState.pyramidMode, 'Work:', Math.floor(timerState.workDuration / 60), 'Break:', Math.floor(timerState.breakDuration / 60));
   });
   
   // Handle disconnect
@@ -160,9 +203,7 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
     
     // Broadcast updated user count to remaining clients
-    //const userCount = io.engine.clientsCount;
-    userCount--;
-    io.emit('user-count-update', userCount);
+    broadcastUserCount();
   });
 });
 
