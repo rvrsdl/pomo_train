@@ -77,8 +77,14 @@
                     </div>
                 </div>
                 <button id="applySettingsBtn" class="btn btn-outline">Apply Settings</button>
-                <div class="passenger-counter" id="passengerCounter">
-                    🚂 Passengers on board: <span id="userCount">0</span>
+                <div class="passenger-list-container" id="passengerListContainer">
+                    <div class="passenger-header" id="passengerHeader">
+                        🚂 Passengers: <span id="passengerCount">0</span>
+                        <span class="expand-indicator">▼</span>
+                    </div>
+                    <div class="passenger-list" id="passengerList">
+                        <!-- Passenger names will be dynamically inserted here -->
+                    </div>
                 </div>
             </div>
         </main>
@@ -96,6 +102,29 @@
             <div class="station-indicators">
                 <div class="station" id="startStation">🚉 Start</div>
                 <div class="station" id="endStation">🏁 Finish</div>
+            </div>
+        </div>
+
+        <!-- Passenger Name Modal -->
+        <div class="modal-overlay" id="nameModal">
+            <div class="modal-content">
+                <h2>🎫 Welcome Aboard the Pomodoro Express!</h2>
+                <p>What shall we call you on this journey?</p>
+
+                <input
+                    type="text"
+                    id="passengerNameInput"
+                    placeholder="Enter your name..."
+                    maxlength="20"
+                    class="name-input"
+                />
+
+                <div class="modal-actions">
+                    <button id="submitNameBtn" class="btn btn-primary">Board the Train!</button>
+                    <button id="randomNameBtn" class="btn btn-outline">Surprise Me!</button>
+                </div>
+
+                <p class="modal-hint">Or choose a random conductor name!</p>
             </div>
         </div>
     </div>

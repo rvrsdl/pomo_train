@@ -32,6 +32,9 @@ let timerState = {
 
 let timerInterval = null;
 
+// Passenger management
+const passengers = new Map(); // Map<socket.id, {name: string, joinedAt: number}>
+
 // Helper function to format time as MM:SS
 function formatTime(seconds) {
   const minutes = Math.floor(seconds / 60);
@@ -48,6 +51,14 @@ function getUserCount() {
 function broadcastUserCount() {
   const count = getUserCount();
   io.emit('user-count-update', count);
+}
+
+// Helper function to broadcast passenger list to all clients
+function broadcastPassengerList() {
+  const passengerNames = Array.from(passengers.values())
+    .sort((a, b) => a.joinedAt - b.joinedAt) // Sort by join time
+    .map(p => p.name);
+  io.emit('passenger-list-update', passengerNames);
 }
 
 // Helper function to calculate pyramid mode work duration
@@ -112,6 +123,9 @@ io.on('connection', (socket) => {
     ...timerState,
     formattedTime: formatTime(timerState.timeRemaining)
   });
+
+  // Request passenger name from newly connected client
+  socket.emit('request-passenger-name');
   
   // Handle start timer event
   socket.on('start-timer', () => {
@@ -197,11 +211,38 @@ io.on('connection', (socket) => {
     broadcastTimerState();
     console.log('Settings updated by:', socket.id, 'Pyramid Mode:', timerState.pyramidMode, 'Work:', Math.floor(timerState.workDuration / 60), 'Break:', Math.floor(timerState.breakDuration / 60));
   });
-  
+
+  // Handle passenger name submission
+  socket.on('set-passenger-name', (data) => {
+    const { name } = data;
+
+    // Validate and sanitize name (max 20 chars, trim whitespace)
+    const sanitizedName = (name || 'Anonymous').trim().substring(0, 20);
+
+    // Store passenger info
+    passengers.set(socket.id, {
+      name: sanitizedName,
+      joinedAt: Date.now()
+    });
+
+    // Broadcast updated list to all clients
+    broadcastPassengerList();
+
+    console.log('Passenger boarded:', sanitizedName, 'Socket:', socket.id);
+  });
+
   // Handle disconnect
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
-    
+
+    // Remove passenger from list
+    const passenger = passengers.get(socket.id);
+    if (passenger) {
+      console.log('Passenger departed:', passenger.name);
+      passengers.delete(socket.id);
+      broadcastPassengerList();
+    }
+
     // Broadcast updated user count to remaining clients
     broadcastUserCount();
   });

@@ -33,6 +33,29 @@ trainWhistle.volume = 0.7; // Set volume to 70%
 // Passenger counter elements
 const userCount = document.getElementById('userCount');
 
+// Passenger list elements
+const nameModal = document.getElementById('nameModal');
+const passengerNameInput = document.getElementById('passengerNameInput');
+const submitNameBtn = document.getElementById('submitNameBtn');
+const randomNameBtn = document.getElementById('randomNameBtn');
+const passengerListContainer = document.getElementById('passengerListContainer');
+const passengerHeader = document.getElementById('passengerHeader');
+const passengerList = document.getElementById('passengerList');
+const passengerCount = document.getElementById('passengerCount');
+
+// Random train-themed passenger names
+const trainNames = [
+    'Conductor Connie', 'Engineer Emma', 'Porter Pete', 'Brakeman Bob',
+    'Fireman Frank', 'Switchman Sam', 'Flagman Flo', 
+    'Signaler Simon', 'Dispatcher Dean', 'Ticket Tina',
+    'Express Eddie', 'Freight Fred', 'Steam Sally', 'Rail Ruby',
+    'Track Tony', 'Station Steve', 'Whistle Wendy', 'Cargo Chris'
+];
+
+function getRandomTrainName() {
+    return trainNames[Math.floor(Math.random() * trainNames.length)];
+}
+
 // Connection status management
 socket.on('connect', () => {
     updateConnectionStatus(true);
@@ -76,6 +99,16 @@ socket.on('mode-changed', (data) => {
 socket.on('user-count-update', (count) => {
     console.log('User count updated:', count);
     updateUserCount(count);
+});
+
+// Request to set passenger name
+socket.on('request-passenger-name', () => {
+    showNameModal();
+});
+
+// Passenger list updates
+socket.on('passenger-list-update', (passengers) => {
+    updatePassengerList(passengers);
 });
 
 function updateTimerDisplay(data) {
@@ -181,15 +214,94 @@ function updateDocumentTitle(time, mode) {
 function updateUserCount(count) {
     if (userCount) {
         userCount.textContent = count;
-        
+
         // Add visual feedback when count changes
         userCount.style.transform = 'scale(1.2)';
         userCount.style.color = '#4ecdc4';
-        
+
         setTimeout(() => {
             userCount.style.transform = 'scale(1)';
             userCount.style.color = '';
         }, 300);
+    }
+}
+
+// Show name modal
+function showNameModal() {
+    if (nameModal) {
+        nameModal.style.display = 'flex';
+
+        // Focus on input
+        setTimeout(() => {
+            if (passengerNameInput) {
+                passengerNameInput.focus();
+            }
+        }, 100);
+    }
+}
+
+// Hide name modal
+function hideNameModal() {
+    if (nameModal) {
+        nameModal.style.display = 'none';
+    }
+}
+
+// Submit passenger name
+function submitPassengerName(name) {
+    const trimmedName = (name || '').trim();
+
+    if (trimmedName.length === 0) {
+        // Show error feedback
+        if (passengerNameInput) {
+            passengerNameInput.classList.add('error-shake');
+            setTimeout(() => {
+                passengerNameInput.classList.remove('error-shake');
+            }, 500);
+        }
+        return;
+    }
+
+    // Send name to server
+    socket.emit('set-passenger-name', { name: trimmedName });
+
+    // Hide modal
+    hideNameModal();
+}
+
+// Update passenger list display
+function updatePassengerList(passengers) {
+    if (!passengerList || !passengerCount) return;
+
+    // Update count
+    passengerCount.textContent = passengers.length;
+
+    // Add visual feedback when count changes
+    passengerCount.style.transform = 'scale(1.2)';
+    passengerCount.style.color = '#4ecdc4';
+
+    setTimeout(() => {
+        passengerCount.style.transform = 'scale(1)';
+        passengerCount.style.color = '';
+    }, 300);
+
+    // Update list
+    passengerList.innerHTML = '';
+
+    passengers.forEach((name, index) => {
+        const passengerItem = document.createElement('div');
+        passengerItem.className = 'passenger-item';
+        passengerItem.textContent = `🎫 ${name}`;
+        passengerItem.style.animationDelay = `${index * 0.05}s`;
+        passengerList.appendChild(passengerItem);
+    });
+
+    // Show empty state if no passengers
+    if (passengers.length === 0) {
+        const emptyState = document.createElement('div');
+        emptyState.className = 'passenger-empty';
+        emptyState.textContent = 'No passengers aboard yet...';
+        passengerList.appendChild(emptyState);
     }
 }
 
@@ -352,6 +464,37 @@ applySettingsBtn.addEventListener('click', () => {
         }, 2000);
     }
 });
+
+// Passenger name modal event listeners
+if (submitNameBtn) {
+    submitNameBtn.addEventListener('click', () => {
+        submitPassengerName(passengerNameInput.value);
+    });
+}
+
+if (randomNameBtn) {
+    randomNameBtn.addEventListener('click', () => {
+        const randomName = getRandomTrainName();
+        passengerNameInput.value = randomName;
+        // Focus on input so user can edit if desired
+        passengerNameInput.focus();
+    });
+}
+
+if (passengerNameInput) {
+    passengerNameInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            submitPassengerName(passengerNameInput.value);
+        }
+    });
+}
+
+// Toggle passenger list expansion
+if (passengerHeader) {
+    passengerHeader.addEventListener('click', () => {
+        passengerListContainer.classList.toggle('expanded');
+    });
+}
 
 // Request notification permission on page load
 if ('Notification' in window && Notification.permission === 'default') {
