@@ -1,3 +1,9 @@
+// Persistent client identity so reconnects don't create duplicate passengers
+if (!localStorage.getItem('clientId')) {
+    localStorage.setItem('clientId', crypto.randomUUID());
+}
+const clientId = localStorage.getItem('clientId');
+
 // Socket.io client connection
 const socket = io();
 
@@ -268,7 +274,7 @@ function submitPassengerName(name) {
     }
 
     // Send name to server
-    socket.emit('set-passenger-name', { name: trimmedName });
+    socket.emit('set-passenger-name', { name: trimmedName, clientId });
 
     // Persist name so mobile users don't have to re-enter after sleep/close
     localStorage.setItem('passengerName', trimmedName);
@@ -299,7 +305,17 @@ function updatePassengerList(passengers) {
     passengers.forEach((name, index) => {
         const passengerItem = document.createElement('div');
         passengerItem.className = 'passenger-item';
-        passengerItem.textContent = `🎫 ${name}`;
+        const myName = localStorage.getItem('passengerName');
+        const isSelf = myName && name === myName;
+        passengerItem.textContent = `🎫 ${name}${isSelf ? ' [ME]' : ''}`;
+        if (isSelf) {
+            passengerItem.style.cursor = 'pointer';
+            passengerItem.title = 'Click to change your name';
+            passengerItem.addEventListener('click', () => {
+                if (passengerNameInput) passengerNameInput.value = myName;
+                showNameModal();
+            });
+        }
         passengerItem.style.animationDelay = `${index * 0.05}s`;
         passengerList.appendChild(passengerItem);
     });

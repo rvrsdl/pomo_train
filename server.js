@@ -33,7 +33,8 @@ let timerState = {
 let timerInterval = null;
 
 // Passenger management
-const passengers = new Map(); // Map<socket.id, {name: string, joinedAt: number}>
+const passengers = new Map(); // Map<clientId, {name: string, joinedAt: number}>
+const socketToClient = new Map(); // Map<socket.id, clientId>
 
 // Helper function to format time as MM:SS
 function formatTime(seconds) {
@@ -214,21 +215,27 @@ io.on('connection', (socket) => {
 
   // Handle passenger name submission
   socket.on('set-passenger-name', (data) => {
-    const { name } = data;
+    const { name, clientId } = data;
+
+    if (!clientId) return;
 
     // Validate and sanitize name (max 20 chars, trim whitespace)
     const sanitizedName = (name || 'Anonymous').trim().substring(0, 20);
 
-    // Store passenger info
-    passengers.set(socket.id, {
+    // Track which clientId this socket belongs to
+    socketToClient.set(socket.id, clientId);
+
+    // Preserve original joinedAt on reconnect so sort order stays stable
+    const existing = passengers.get(clientId);
+    passengers.set(clientId, {
       name: sanitizedName,
-      joinedAt: Date.now()
+      joinedAt: existing ? existing.joinedAt : Date.now()
     });
 
     // Broadcast updated list to all clients
     broadcastPassengerList();
 
-    console.log('Passenger boarded:', sanitizedName, 'Socket:', socket.id);
+    console.log('Passenger boarded:', sanitizedName, 'Client:', clientId);
   });
 
   // Handle disconnect
@@ -236,11 +243,15 @@ io.on('connection', (socket) => {
     console.log('User disconnected:', socket.id);
 
     // Remove passenger from list
-    const passenger = passengers.get(socket.id);
-    if (passenger) {
-      console.log('Passenger departed:', passenger.name);
-      passengers.delete(socket.id);
-      broadcastPassengerList();
+    const clientId = socketToClient.get(socket.id);
+    socketToClient.delete(socket.id);
+    if (clientId) {
+      const passenger = passengers.get(clientId);
+      if (passenger) {
+        console.log('Passenger departed:', passenger.name);
+        passengers.delete(clientId);
+        broadcastPassengerList();
+      }
     }
 
     // Broadcast updated user count to remaining clients
