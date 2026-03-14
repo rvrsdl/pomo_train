@@ -35,6 +35,7 @@ let timerInterval = null;
 // Passenger management
 const passengers = new Map(); // Map<clientId, {name: string, joinedAt: number}>
 const socketToClient = new Map(); // Map<socket.id, clientId>
+const clientSockets = new Map(); // Map<clientId, Set<socket.id>>
 
 // Helper function to format time as MM:SS
 function formatTime(seconds) {
@@ -43,23 +44,13 @@ function formatTime(seconds) {
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
-// Helper function to get current user count
-function getUserCount() {
-  return io.engine.clientsCount || 0;
-}
-
-// Helper function to broadcast user count to all clients
-function broadcastUserCount() {
-  const count = getUserCount();
-  io.emit('user-count-update', count);
-}
 
 // Helper function to broadcast passenger list to all clients
 function broadcastPassengerList() {
-  const passengerNames = Array.from(passengers.values())
-    .sort((a, b) => a.joinedAt - b.joinedAt) // Sort by join time
-    .map(p => p.name);
-  io.emit('passenger-list-update', passengerNames);
+  const passengerList = Array.from(passengers.entries())
+    .sort(([, a], [, b]) => a.joinedAt - b.joinedAt)
+    .map(([clientId, p]) => ({ name: p.name, clientId }));
+  io.emit('passenger-list-update', passengerList);
 }
 
 // Helper function to calculate pyramid mode work duration
@@ -116,9 +107,6 @@ function startCountdown() {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
-  // Broadcast updated user count to all clients
-  broadcastUserCount();
-
   // Send current state to newly connected client
   socket.emit('timer-update', {
     ...timerState,
@@ -201,8 +189,10 @@ io.on('connection', (socket) => {
       timerState.breakDuration = breakMinutes * 60;
     }
     
-    // Update current time remaining based on current mode
-    timerState.timeRemaining = timerState.mode === 'work' ? timerState.workDuration : timerState.breakDuration;
+    // Only reset time remaining if the timer is not running — don't interrupt an active session
+    if (!timerState.isRunning) {
+      timerState.timeRemaining = timerState.mode === 'work' ? timerState.workDuration : timerState.breakDuration;
+    }
     
     // If timer was running, restart it with new duration
     if (timerState.isRunning) {
@@ -224,6 +214,8 @@ io.on('connection', (socket) => {
 
     // Track which clientId this socket belongs to
     socketToClient.set(socket.id, clientId);
+    if (!clientSockets.has(clientId)) clientSockets.set(clientId, new Set());
+    clientSockets.get(clientId).add(socket.id);
 
     // Preserve original joinedAt on reconnect so sort order stays stable
     const existing = passengers.get(clientId);
@@ -242,20 +234,25 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
 
-    // Remove passenger from list
+    // Remove passenger only when their last tab/socket disconnects
     const clientId = socketToClient.get(socket.id);
     socketToClient.delete(socket.id);
     if (clientId) {
-      const passenger = passengers.get(clientId);
-      if (passenger) {
-        console.log('Passenger departed:', passenger.name);
-        passengers.delete(clientId);
-        broadcastPassengerList();
+      const sockets = clientSockets.get(clientId);
+      if (sockets) {
+        sockets.delete(socket.id);
+        if (sockets.size === 0) {
+          clientSockets.delete(clientId);
+          const passenger = passengers.get(clientId);
+          if (passenger) {
+            console.log('Passenger departed:', passenger.name);
+            passengers.delete(clientId);
+            broadcastPassengerList();
+          }
+        }
       }
     }
 
-    // Broadcast updated user count to remaining clients
-    broadcastUserCount();
   });
 });
 

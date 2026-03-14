@@ -32,16 +32,15 @@ const startStation = document.getElementById('startStation');
 const endStation = document.getElementById('endStation');
 
 // Audio elements
-const trainWhistle = new Audio('choo-choo-train-whistle-sound-effect.mp3');
-trainWhistle.preload = 'auto';
-trainWhistle.volume = 0.7; // Set volume to 70%
+function createAudio(src) {
+    const audio = new Audio(src);
+    audio.preload = 'auto';
+    audio.volume = 0.7;
+    return audio;
+}
+const trainWhistle = createAudio('choo-choo-train-whistle-sound-effect.mp3');
+const ding = createAudio('ding.mp3');
 
-const ding = new Audio('ding.mp3');
-ding.preload = 'auto';
-ding.volume = 0.7;
-
-// Passenger counter elements
-const userCount = document.getElementById('userCount');
 
 // Passenger list elements
 const nameModal = document.getElementById('nameModal');
@@ -69,6 +68,7 @@ function getRandomTrainName() {
 // Connection status management
 socket.on('connect', () => {
     updateConnectionStatus(true);
+    prevPassengerCount = 0;
     console.log('Connected to server');
 });
 
@@ -105,11 +105,6 @@ socket.on('mode-changed', (data) => {
     showModeChangeNotification(data.mode, data.cycleCount);
 });
 
-// User count updates
-socket.on('user-count-update', (count) => {
-    console.log('User count updated:', count);
-    updateUserCount(count);
-});
 
 // Request to set passenger name
 socket.on('request-passenger-name', () => {
@@ -231,20 +226,13 @@ function updateDocumentTitle(time, mode) {
     document.title = `${modeEmoji} ${time} - Pomodoro Express`;
 }
 
-// User count management
-function updateUserCount(count) {
-    if (userCount) {
-        userCount.textContent = count;
-
-        // Add visual feedback when count changes
-        userCount.style.transform = 'scale(1.2)';
-        userCount.style.color = '#4ecdc4';
-
-        setTimeout(() => {
-            userCount.style.transform = 'scale(1)';
-            userCount.style.color = '';
-        }, 300);
-    }
+function pulseElement(el) {
+    el.style.transform = 'scale(1.2)';
+    el.style.color = '#4ecdc4';
+    setTimeout(() => {
+        el.style.transform = 'scale(1)';
+        el.style.color = '';
+    }, 300);
 }
 
 // Show name modal
@@ -297,26 +285,18 @@ function submitPassengerName(name) {
 function updatePassengerList(passengers) {
     if (!passengerList || !passengerCount) return;
 
-    // Update count
-    passengerCount.textContent = passengers.length;
-
-    // Add visual feedback when count changes
-    passengerCount.style.transform = 'scale(1.2)';
-    passengerCount.style.color = '#4ecdc4';
-
-    setTimeout(() => {
-        passengerCount.style.transform = 'scale(1)';
-        passengerCount.style.color = '';
-    }, 300);
+    const newCount = passengers.length;
+    if (newCount !== prevPassengerCount) pulseElement(passengerCount);
+    passengerCount.textContent = newCount;
 
     // Update list
     passengerList.innerHTML = '';
 
-    passengers.forEach((name, index) => {
+    const myName = localStorage.getItem('passengerName');
+    passengers.forEach(({ name, clientId: entryClientId }, index) => {
         const passengerItem = document.createElement('div');
         passengerItem.className = 'passenger-item';
-        const myName = localStorage.getItem('passengerName');
-        const isSelf = myName && name === myName;
+        const isSelf = entryClientId === clientId;
         passengerItem.textContent = `🎫 ${name}${isSelf ? ' [ME]' : ''}`;
         if (isSelf) {
             passengerItem.style.cursor = 'pointer';
