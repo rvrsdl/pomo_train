@@ -103,7 +103,12 @@ socket.on('user-count-update', (count) => {
 
 // Request to set passenger name
 socket.on('request-passenger-name', () => {
-    showNameModal();
+    const savedName = localStorage.getItem('passengerName');
+    if (savedName) {
+        submitPassengerName(savedName);
+    } else {
+        showNameModal();
+    }
 });
 
 // Passenger list updates
@@ -264,6 +269,9 @@ function submitPassengerName(name) {
 
     // Send name to server
     socket.emit('set-passenger-name', { name: trimmedName });
+
+    // Persist name so mobile users don't have to re-enter after sleep/close
+    localStorage.setItem('passengerName', trimmedName);
 
     // Hide modal
     hideNameModal();
