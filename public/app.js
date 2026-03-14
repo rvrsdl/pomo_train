@@ -515,12 +515,21 @@ if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission();
 }
 
-// Enable audio playback on first user interaction
-document.addEventListener('click', () => {
-    // Preload and enable audio for future playback
-    trainWhistle.load();
-    ding.load();
-}, { once: true });
+// Unlock audio on first user interaction (required by iOS/mobile browsers)
+// Must call .play() inside a gesture handler — .load() alone is not sufficient
+let audioUnlocked = false;
+function unlockAudio() {
+    if (audioUnlocked) return;
+    audioUnlocked = true;
+    [trainWhistle, ding].forEach(audio => {
+        audio.play().then(() => {
+            audio.pause();
+            audio.currentTime = 0;
+        }).catch(() => {});
+    });
+}
+document.addEventListener('touchstart', unlockAudio, { once: true });
+document.addEventListener('click', unlockAudio, { once: true });
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (event) => {
