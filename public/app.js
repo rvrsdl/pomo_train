@@ -36,6 +36,10 @@ const trainWhistle = new Audio('choo-choo-train-whistle-sound-effect.mp3');
 trainWhistle.preload = 'auto';
 trainWhistle.volume = 0.7; // Set volume to 70%
 
+const ding = new Audio('ding.mp3');
+ding.preload = 'auto';
+ding.volume = 0.7;
+
 // Passenger counter elements
 const userCount = document.getElementById('userCount');
 
@@ -118,7 +122,13 @@ socket.on('request-passenger-name', () => {
 });
 
 // Passenger list updates
+let prevPassengerCount = 0;
 socket.on('passenger-list-update', (passengers) => {
+    if (passengers.length > prevPassengerCount && prevPassengerCount > 0) {
+        ding.currentTime = 0;
+        ding.play().catch(() => {});
+    }
+    prevPassengerCount = passengers.length;
     updatePassengerList(passengers);
 });
 
@@ -529,6 +539,7 @@ if ('Notification' in window && Notification.permission === 'default') {
 document.addEventListener('click', () => {
     // Preload and enable audio for future playback
     trainWhistle.load();
+    ding.load();
 }, { once: true });
 
 // Keyboard shortcuts
