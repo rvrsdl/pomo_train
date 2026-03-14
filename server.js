@@ -63,8 +63,8 @@ function broadcastPassengerList() {
 
 // Helper function to calculate pyramid mode work duration
 function getPyramidWorkDuration(cycleCount) {
-  // Pyramid mode: 5, 10, 15, 20, 25, 30 (then stays at 30)
-  const workMinutes = Math.min(30, 5 + (cycleCount * 5));
+  // Pyramid mode: 10, 15, 20, 25 (then stays at 25)
+  const workMinutes = Math.min(25, 10 + (cycleCount * 5));
   return workMinutes * 60;
 }
 
@@ -156,7 +156,7 @@ io.on('connection', (socket) => {
     timerState.mode = 'work'; // Always reset to work mode
     timerState.cycleCount = 0;
     
-    // If pyramid mode is enabled, reset to initial pyramid duration (5 min)
+    // If pyramid mode is enabled, reset to initial pyramid duration (10 min)
     if (timerState.pyramidMode) {
       timerState.workDuration = getPyramidWorkDuration(0);
     }
@@ -180,7 +180,7 @@ io.on('connection', (socket) => {
     if (pyramidMode !== undefined) {
       timerState.pyramidMode = pyramidMode;
       
-      // If enabling pyramid mode, set initial work duration to 5 min
+      // If enabling pyramid mode, set initial work duration to 10 min
       if (pyramidMode) {
         timerState.workDuration = getPyramidWorkDuration(timerState.cycleCount);
       }

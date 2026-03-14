@@ -189,8 +189,8 @@ function updatePyramidModeUI(isPyramidMode, cycleCount = 0) {
 
 // Update pyramid mode duration highlighting
 function updatePyramidHighlight(cycleCount) {
-    // Cap cycle count at 5 (30 minutes is the max)
-    const activeCycle = Math.min(cycleCount, 5);
+    // Cap cycle count at 3 (25 minutes is the max)
+    const activeCycle = Math.min(cycleCount, 3);
     
     // Remove active class from all durations
     const durations = document.querySelectorAll('.pyramid-duration');
